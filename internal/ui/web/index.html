@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>nixer</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #fff; --text: #1c2026; --muted: #667085; --border: #e1e4ea;
+    --accent: #5277c3; --accent-text: #fff; --danger: #c0392b; --ok: #1e8a4c;
+    --add-bg: #e6f6ec; --del-bg: #fdeaea; --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171c; --panel: #1c2128; --text: #e6e9ee; --muted: #8b95a5; --border: #2c333d;
+      --accent: #7ea1e8; --accent-text: #10151c; --danger: #ef7a6c; --ok: #5cc98a;
+      --add-bg: #17301f; --del-bg: #3a1d1d;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  header { display: flex; align-items: center; gap: 16px; padding: 12px 20px; background: var(--panel); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 2; }
+  header h1 { font-size: 16px; margin: 0; }
+  header .dir { color: var(--muted); font-family: var(--mono); font-size: 12px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  main { display: grid; grid-template-columns: minmax(280px, 380px) 1fr; gap: 16px; padding: 16px 20px; max-width: 1200px; margin: 0 auto; }
+  @media (max-width: 800px) { main { grid-template-columns: 1fr; } }
+  section { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+  section + section { margin-top: 16px; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 10px; }
+  button, input, select { font: inherit; color: inherit; }
+  button { border: 1px solid var(--border); background: var(--panel); border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button:disabled { opacity: .5; cursor: default; }
+  button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
+  button.primary.pending { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent); }
+  input[type=text], select { border: 1px solid var(--border); background: var(--bg); border-radius: 6px; padding: 6px 9px; }
+  input[type=text] { width: 100%; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .tab { border-radius: 999px; padding: 3px 11px; font-size: 13px; }
+  .tab.active { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  .tab .n { opacity: .7; margin-left: 4px; }
+  ul { list-style: none; margin: 0; padding: 0; }
+  li.row { display: flex; align-items: center; gap: 8px; padding: 6px 2px; border-top: 1px solid var(--border); }
+  li.row:first-child { border-top: 0; }
+  li.row .name { flex: 1; font-family: var(--mono); font-size: 13px; overflow-wrap: anywhere; }
+  li.row .desc { color: var(--muted); font-size: 12px; }
+  .grow { flex: 1; min-width: 0; }
+  .x { color: var(--danger); border-color: transparent; background: transparent; padding: 2px 8px; }
+  .row-inline { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+  .row-inline input[type=text] { flex: 1; min-width: 140px; width: auto; }
+  .muted { color: var(--muted); }
+  .badge { font-size: 11px; color: var(--ok); border: 1px solid var(--ok); border-radius: 999px; padding: 0 7px; }
+  .kind { font-size: 11px; color: var(--muted); border: 1px solid var(--border); border-radius: 999px; padding: 0 7px; }
+  .opts { display: flex; gap: 14px; align-items: center; margin: 8px 0 4px; color: var(--muted); font-size: 13px; flex-wrap: wrap; }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .seg button { white-space: nowrap; border: 0; border-radius: 0; background: transparent; }
+  .seg button.active { background: var(--accent); color: var(--accent-text); }
+  pre { margin: 0; font: 12px/1.5 var(--mono); overflow-x: auto; white-space: pre-wrap; }
+  .diff { border: 1px solid var(--border); border-radius: 6px; margin-top: 8px; overflow: hidden; }
+  .diff .file { padding: 4px 10px; background: var(--bg); font: 12px var(--mono); color: var(--muted); }
+  .diff .ln { padding: 0 10px; white-space: pre; font: 12px/1.5 var(--mono); }
+  .diff .ln.add { background: var(--add-bg); }
+  .diff .ln.del { background: var(--del-bg); }
+  .diff .ln.hunk { color: var(--muted); }
+  .when { color: var(--muted); font-size: 12px; margin-top: 12px; }
+  #log { max-height: 340px; overflow: auto; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px; }
+  #toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 8px 14px; border-radius: 8px; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: 80vw; z-index: 5; }
+  #toast.show { opacity: .95; }
+  #toast.err { background: var(--danger); color: #fff; }
+</style>
+</head>
+<body>
+<header>
+  <h1>nixer</h1>
+  <span class="dir" id="dir"></span>
+  <button class="primary" id="apply" title="sudo darwin-rebuild switch">Apply</button>
+</header>
+<main>
+  <div>
+    <section>
+      <h2>Your config</h2>
+      <div class="tabs" id="tabs"></div>
+      <ul id="items"></ul>
+      <form class="row-inline" id="manual">
+        <input type="text" id="manual-name" placeholder="Add by exact name" autocomplete="off" spellcheck="false">
+        <button type="submit">Add</button>
+      </form>
+    </section>
+  </div>
+  <div>
+    <section>
+      <h2>Search</h2>
+      <form class="row-inline" id="search-form" style="margin-top:0">
+        <input type="text" id="q" placeholder="Search packages, e.g. ripgrep" autocomplete="off" spellcheck="false">
+        <div class="seg" id="source">
+          <button type="button" data-source="nix" class="active">nixpkgs</button>
+          <button type="button" data-source="brew">Homebrew</button>
+        </div>
+        <button type="submit" class="primary">Search</button>
+      </form>
+      <div class="opts" id="nix-opts">
+        <label>Add to
+          <select id="nix-target">
+            <option value="home">home packages</option>
+            <option value="system">system packages</option>
+            <option value="font">fonts</option>
+          </select>
+        </label>
+        <label><input type="checkbox" id="unstable"> from <span id="unstable-name">pkgs-unstable</span></label>
+        <label><input type="checkbox" id="force"> skip existence check</label>
+      </div>
+      <ul id="results"></ul>
+      <div class="muted" id="results-note"></div>
+    </section>
+    <section id="changes-section" hidden>
+      <h2>Changes this session</h2>
+      <div id="changes"></div>
+    </section>
+    <section id="log-section" hidden>
+      <h2>Apply output</h2>
+      <pre id="log"></pre>
+    </section>
+  </div>
+</main>
+<div id="toast"></div>
+<script>
+"use strict";
+const TOKEN = "{{TOKEN}}";
+const $ = (id) => document.getElementById(id);
+
+const state = { lists: [], tab: "home", source: "nix", pending: false, applying: false };
+
+async function api(path, opts = {}) {
+  const r = await fetch(path, {
+    ...opts,
+    headers: { "X-Nixer-Token": TOKEN, "Content-Type": "application/json" },
+  });
+  if (!r.ok) {
+    let msg = r.statusText;
+    try { msg = (await r.json()).error || msg; } catch (_) { /* not JSON */ }
+    throw new Error(msg);
+  }
+  return r;
+}
+const post = (path, body) => api(path, { method: "POST", body: JSON.stringify(body) }).then((r) => r.json());
+
+let toastTimer;
+function toast(msg, isErr) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.className = "show" + (isErr ? " err" : "");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = ""; }, isErr ? 6000 : 2500);
+}
+
+function el(tag, attrs = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") e.className = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v);
+  }
+  for (const k of kids) e.append(k);
+  return e;
+}
+
+let unstableSet = "pkgs-unstable";
+const strip = (n) => {
+  for (const p of [unstableSet + ".", "pkgs-unstable.", "pkgs."]) if (n.startsWith(p)) return n.slice(p.length);
+  return n;
+};
+function installed(name) {
+  return state.lists.some((l) => l.items.some((i) => strip(i) === name));
+}
+
+// ── Config lists ─────────────────────────────────────────────────────────────
+async function loadLists() {
+  const data = await (await api("/api/lists")).json();
+  state.lists = data.lists;
+  unstableSet = data.unstable || unstableSet;
+  document.getElementById("unstable-name").textContent = unstableSet;
+  $("dir").textContent = data.dir;
+  renderTabs();
+  renderItems();
+  renderResults();
+}
+
+function renderTabs() {
+  const tabs = $("tabs");
+  tabs.replaceChildren();
+  for (const l of state.lists) {
+    const b = el("button", { class: "tab" + (l.kind === state.tab ? " active" : ""), type: "button",
+      onclick: () => { state.tab = l.kind; renderTabs(); renderItems(); } },
+      l.label, el("span", { class: "n" }, String(l.items.length)));
+    tabs.append(b);
+  }
+}
+
+function renderItems() {
+  const l = state.lists.find((x) => x.kind === state.tab);
+  const ul = $("items");
+  ul.replaceChildren();
+  if (!l) return;
+  if (l.error) ul.append(el("li", { class: "muted" }, `${l.file}: ${l.error}`));
+  else if (!l.items.length) ul.append(el("li", { class: "muted" }, "Nothing here yet."));
+  for (const item of l.items) {
+    ul.append(el("li", { class: "row" },
+      el("span", { class: "name" }, item),
+      el("button", { class: "x", type: "button", title: "Remove", onclick: () => remove(l.kind, strip(item)) }, "✕")));
+  }
+  $("manual-name").placeholder = `Add to ${l.label} by exact name`;
+}
+
+// ── Changes ──────────────────────────────────────────────────────────────────
+function showChanges(res) {
+  if (!res.diffs || !res.diffs.length) return;
+  $("changes-section").hidden = false;
+  const box = $("changes");
+  const wrap = el("div", {}, el("div", { class: "when" }, new Date().toLocaleTimeString() + " — " + (res.notes || []).join("; ")));
+  for (const d of res.diffs) {
+    const body = el("div", { class: "diff" }, el("div", { class: "file" }, d.file));
+    for (const line of d.diff.split("\n").slice(2)) {
+      if (!line) continue;
+      const cls = line[0] === "+" ? "add" : line[0] === "-" ? "del" : line[0] === "@" ? "hunk" : "";
+      body.append(el("div", { class: "ln " + cls }, line));
+    }
+    wrap.append(body);
+  }
+  box.prepend(wrap);
+  setPending(true);
+}
+
+function setPending(p) {
+  state.pending = p;
+  $("apply").classList.toggle("pending", p);
+}
+
+async function change(kind, endpoint, names, extra = {}) {
+  try {
+    const res = await post(endpoint, { kind, names, ...extra });
+    showChanges(res);
+    const msg = [...(res.notes || [])];
+    for (const m of res.missing || []) msg.push(`${m} not found`);
+    toast(msg.join("; ") || "No change", false);
+    await loadLists();
+    return true;
+  } catch (e) {
+    toast(e.message, true);
+    return false;
+  }
+}
+const remove = (kind, name) => change(kind, "/api/remove", [name]);
+
+// ── Search ───────────────────────────────────────────────────────────────────
+let results = [];
+async function doSearch(ev) {
+  ev.preventDefault();
+  const q = $("q").value.trim();
+  if (q.length < 2) return;
+  const note = $("results-note");
+  $("results").replaceChildren();
+  note.textContent = state.source === "nix" ? "Searching nixpkgs (the first search can take a while)…" : "Searching Homebrew…";
+  try {
+    results = await (await api(`/api/search?source=${state.source}&q=${encodeURIComponent(q)}`)).json();
+    note.textContent = results.length ? "" : "No matches.";
+  } catch (e) {
+    results = [];
+    note.textContent = "";
+    toast(e.message, true);
+  }
+  renderResults();
+}
+
+function renderResults() {
+  const ul = $("results");
+  ul.replaceChildren();
+  for (const r of results) {
+    const kind = r.kind || $("nix-target").value;
+    const have = installed(r.name);
+    const info = el("div", { class: "grow" },
+      el("div", { class: "name" }, r.name + (r.version ? "  " + r.version : "")),
+      el("div", { class: "desc" }, r.description || ""));
+    const right = have
+      ? el("span", { class: "badge" }, "in config")
+      : el("button", { type: "button", onclick: () => addResult(r) }, "Add");
+    ul.append(el("li", { class: "row" }, info, r.kind ? el("span", { class: "kind" }, r.kind) : "", right));
+  }
+}
+
+function addResult(r) {
+  const isBrew = !!r.kind;
+  return change(r.kind || $("nix-target").value, "/api/add", [r.name], isBrew ? {} : {
+    unstable: $("unstable").checked, force: $("force").checked,
+  });
+}
+
+// ── Apply ────────────────────────────────────────────────────────────────────
+async function apply() {
+  if (state.applying) return;
+  if (!confirm("Run darwin-rebuild switch now?")) return;
+  state.applying = true;
+  $("apply").disabled = true;
+  $("apply").textContent = "Applying…";
+  $("log-section").hidden = false;
+  const log = $("log");
+  log.textContent = "";
+  try {
+    const r = await api("/api/apply", { method: "POST" });
+    const reader = r.body.getReader();
+    const dec = new TextDecoder();
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      log.textContent += dec.decode(value, { stream: true });
+      log.scrollTop = log.scrollHeight;
+    }
+    if (/\[exit status 0\]/.test(log.textContent)) { setPending(false); toast("Applied", false); }
+    else toast("Apply failed — see output", true);
+  } catch (e) {
+    log.textContent += "\n" + e.message;
+    toast(e.message, true);
+  } finally {
+    state.applying = false;
+    $("apply").disabled = false;
+    $("apply").textContent = "Apply";
+  }
+}
+
+// ── Wiring ───────────────────────────────────────────────────────────────────
+$("search-form").addEventListener("submit", doSearch);
+$("apply").addEventListener("click", apply);
+$("nix-target").addEventListener("change", renderResults);
+$("manual").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const name = $("manual-name").value.trim();
+  if (!name) return;
+  const quoted = ["brew", "cask", "tap"].includes(state.tab);
+  const ok = await change(state.tab, "/api/add", [name], quoted ? {} : { unstable: $("unstable").checked, force: $("force").checked });
+  if (ok) $("manual-name").value = "";
+});
+for (const b of $("source").querySelectorAll("button")) {
+  b.addEventListener("click", () => {
+    state.source = b.dataset.source;
+    for (const o of $("source").querySelectorAll("button")) o.classList.toggle("active", o === b);
+    $("nix-opts").hidden = state.source !== "nix";
+    results = [];
+    renderResults();
+    $("results-note").textContent = "";
+  });
+}
+
+loadLists().catch((e) => toast(e.message, true));
+</script>
+</body>
+</html>
