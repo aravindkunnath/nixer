@@ -85,6 +85,10 @@ nix run github:aksappy/nixer -- list      # try it
 nix profile install github:aksappy/nixer  # or add the flake as an input
 ```
 
+Prebuilt macOS binaries (arm64 and amd64, with `SHA256SUMS`) are attached to each
+[GitHub release](../../releases). Every push to `main` that passes CI publishes a release for the version in
+`VERSION` if it has none yet, so to cut a release bump `VERSION` and merge.
+
 From source: `go build -o bin/nixer ./cmd/nixer`.
 
 ## Layout

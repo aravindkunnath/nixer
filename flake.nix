@@ -5,7 +5,8 @@
 
   outputs = { self, nixpkgs }:
     let
-      version = "0.1.0";
+      # Single source of truth for the version; the release workflow reads it too.
+      version = nixpkgs.lib.removeSuffix "\n" (builtins.readFile ./VERSION);
       # macOS only: nixer drives darwin-rebuild, which does not exist elsewhere.
       systems = [ "aarch64-darwin" "x86_64-darwin" ];
       forAll = f: nixpkgs.lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});

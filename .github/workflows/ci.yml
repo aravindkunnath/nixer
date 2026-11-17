@@ -20,4 +20,58 @@ jobs:
       - name: build
         run: nix build .#nixer --print-build-logs
       - name: smoke
-        run: ./result/bin/nixer version
+        run: test "$(./result/bin/nixer version)" = "nixer $(cat VERSION)"
+
+  # Every push to main publishes a release for the version in VERSION, unless
+  # that version already has one. Bump VERSION (and merge) to cut a release.
+  release:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Decide whether to release
+        id: ver
+        run: |
+          v="$(tr -d '[:space:]' < VERSION)"
+          if ! echo "$v" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "VERSION must look like 1.2.3, got '$v'" >&2
+            exit 1
+          fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          if gh release view "v$v" >/dev/null 2>&1; then
+            echo "v$v is already released; nothing to do."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Build
+        if: steps.ver.outputs.release == 'true'
+        run: |
+          v="${{ steps.ver.outputs.version }}"
+          mkdir dist
+          for arch in arm64 amd64; do
+            name="nixer-$v-darwin-$arch"
+            mkdir "dist/$name"
+            GOOS=darwin GOARCH=$arch CGO_ENABLED=0 go build -trimpath \
+              -ldflags "-s -w -X github.com/aksappy/nixer/internal/version.Version=$v" \
+              -o "dist/$name/nixer" ./cmd/nixer
+            cp LICENSE README.md "dist/$name/"
+            tar -C dist -czf "dist/$name.tar.gz" "$name"
+          done
+          (cd dist && shasum -a 256 -- *.tar.gz > SHA256SUMS)
+      - name: Publish release
+        if: steps.ver.outputs.release == 'true'
+        run: |
+          v="${{ steps.ver.outputs.version }}"
+          gh release create "v$v" dist/*.tar.gz dist/SHA256SUMS \
+            --target "$GITHUB_SHA" --title "nixer $v" --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}
