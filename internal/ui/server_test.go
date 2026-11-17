@@ -2,7 +2,7 @@ package ui
 
 import (
 	"encoding/json"
-	"github.com/aksappy/nixer/internal/config"
+	"github.com/aravindkunnath/nixer/internal/config"
 	"net/http"
 	"net/http/httptest"
 	"os"

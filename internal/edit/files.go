@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/aksappy/nixer/internal/diff"
+	"github.com/aravindkunnath/nixer/internal/diff"
 )
 
 // StateDir is where nixer keeps its undo backup, inside the config directory.

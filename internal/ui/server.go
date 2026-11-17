@@ -21,10 +21,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aksappy/nixer/internal/config"
-	"github.com/aksappy/nixer/internal/edit"
-	"github.com/aksappy/nixer/internal/rebuild"
-	"github.com/aksappy/nixer/internal/search"
+	"github.com/aravindkunnath/nixer/internal/config"
+	"github.com/aravindkunnath/nixer/internal/edit"
+	"github.com/aravindkunnath/nixer/internal/rebuild"
+	"github.com/aravindkunnath/nixer/internal/search"
 )
 
 //go:embed web/index.html

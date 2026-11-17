@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/aksappy/nixer/internal/cli"
+	"github.com/aravindkunnath/nixer/internal/cli"
 )
 
 func main() {

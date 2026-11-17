@@ -81,8 +81,8 @@ field is optional; anything you leave out keeps the default above.
 ## Install
 
 ```sh
-nix run github:aksappy/nixer -- list      # try it
-nix profile install github:aksappy/nixer  # or add the flake as an input
+nix run github:aravindkunnath/nixer -- list      # try it
+nix profile install github:aravindkunnath/nixer  # or add the flake as an input
 ```
 
 Prebuilt macOS binaries (arm64 and amd64, with `SHA256SUMS`) are attached to each

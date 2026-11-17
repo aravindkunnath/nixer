@@ -11,9 +11,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/aksappy/nixer/internal/config"
-	"github.com/aksappy/nixer/internal/diff"
-	"github.com/aksappy/nixer/internal/nixedit"
+	"github.com/aravindkunnath/nixer/internal/config"
+	"github.com/aravindkunnath/nixer/internal/diff"
+	"github.com/aravindkunnath/nixer/internal/nixedit"
 )
 
 // FileDiff is the change made to one file.

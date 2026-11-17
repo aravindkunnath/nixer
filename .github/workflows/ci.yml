@@ -61,7 +61,7 @@ jobs:
             name="nixer-$v-darwin-$arch"
             mkdir "dist/$name"
             GOOS=darwin GOARCH=$arch CGO_ENABLED=0 go build -trimpath \
-              -ldflags "-s -w -X github.com/aksappy/nixer/internal/version.Version=$v" \
+              -ldflags "-s -w -X github.com/aravindkunnath/nixer/internal/version.Version=$v" \
               -o "dist/$name/nixer" ./cmd/nixer
             cp LICENSE README.md "dist/$name/"
             tar -C dist -czf "dist/$name.tar.gz" "$name"

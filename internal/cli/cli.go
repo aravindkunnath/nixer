@@ -12,12 +12,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/aksappy/nixer/internal/config"
-	"github.com/aksappy/nixer/internal/edit"
-	"github.com/aksappy/nixer/internal/git"
-	"github.com/aksappy/nixer/internal/rebuild"
-	"github.com/aksappy/nixer/internal/ui"
-	"github.com/aksappy/nixer/internal/version"
+	"github.com/aravindkunnath/nixer/internal/config"
+	"github.com/aravindkunnath/nixer/internal/edit"
+	"github.com/aravindkunnath/nixer/internal/git"
+	"github.com/aravindkunnath/nixer/internal/rebuild"
+	"github.com/aravindkunnath/nixer/internal/ui"
+	"github.com/aravindkunnath/nixer/internal/version"
 )
 
 const usageText = `nixer: add/remove packages in your nix-darwin config without opening the files.

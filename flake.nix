@@ -17,7 +17,7 @@
           pname = "nixer";
           inherit version;
           src = ./.;
-          ldflags = [ "-X github.com/aksappy/nixer/internal/version.Version=${version}" ];
+          ldflags = [ "-X github.com/aravindkunnath/nixer/internal/version.Version=${version}" ];
           vendorHash = null; # standard library only
           subPackages = [ "cmd/nixer" ];
           meta.mainProgram = "nixer";

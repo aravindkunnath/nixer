@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/aksappy/nixer/internal/config"
+	"github.com/aravindkunnath/nixer/internal/config"
 )
 
 // A config with a system file only: no home-manager file, no Homebrew lists.
