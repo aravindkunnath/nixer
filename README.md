@@ -45,7 +45,8 @@ random per-run token (in the printed URL), come from its own loopback address, a
 
 ## Config location
 
-`--dir`, then `$NIXER_DIR`, then the current directory (must contain `flake.nix`).
+`--dir`, then the nearest directory from the current one upwards that contains `flake.nix` (so it works from
+any subfolder of a config), then `$NIXER_DIR`. `nixer doctor` prints which directory it picked.
 Expected layout: `home.nix` (with `home.packages`) and `configuration.nix`
 (`environment.systemPackages`, `fonts.packages`, and `homebrew.{brews,casks,taps}`).
 

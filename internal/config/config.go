@@ -39,12 +39,36 @@ var DefaultTargets = []Target{
 	{"tap", "homebrew taps", "configuration.nix", "homebrew.taps", true},
 }
 
-// Dir resolves the config directory: the flag, then $NIXER_DIR, then
-// the current directory if it holds a flake.nix.
+// findUp returns the nearest directory, starting at the current one and
+// going up through its parents, that holds a flake.nix (as git finds .git).
+func findUp() (string, bool) {
+	d, err := os.Getwd()
+	if err != nil {
+		return "", false
+	}
+	for {
+		if _, err := os.Stat(filepath.Join(d, "flake.nix")); err == nil {
+			return d, true
+		}
+		parent := filepath.Dir(d)
+		if parent == d {
+			return "", false
+		}
+		d = parent
+	}
+}
+
+// Dir resolves the config directory: the flag, then the nearest directory
+// from here upwards that holds a flake.nix (standing in a config, or in a
+// folder inside one, means that config), then $NIXER_DIR.
 func Dir(flagValue string) (string, error) {
 	d := flagValue
 	if d == "" {
-		d = os.Getenv("NIXER_DIR")
+		if up, ok := findUp(); ok {
+			d = up
+		} else {
+			d = os.Getenv("NIXER_DIR")
+		}
 	}
 	if d == "" {
 		d = "."

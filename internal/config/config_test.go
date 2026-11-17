@@ -139,3 +139,54 @@ func TestResolveHost(t *testing.T) {
 		})
 	}
 }
+
+func TestDirPrecedence(t *testing.T) {
+	mk := func() string {
+		d := t.TempDir()
+		if err := os.WriteFile(filepath.Join(d, "flake.nix"), []byte("{}"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		d, _ = filepath.EvalSymlinks(d)
+		return d
+	}
+	here, env, flagDir, empty := mk(), mk(), mk(), t.TempDir()
+	sub := filepath.Join(here, "modules")
+	deep := filepath.Join(sub, "x", "y")
+	if err := os.MkdirAll(deep, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	empty, _ = filepath.EvalSymlinks(empty)
+	old, _ := os.Getwd()
+	defer os.Chdir(old)
+	cd := func(d string) {
+		if err := os.Chdir(d); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for name, tc := range map[string]struct {
+		cwd, env, flag, want string
+		wantErr              bool
+	}{
+		"flag wins over everything":       {here, env, flagDir, flagDir, false},
+		"cwd config beats NIXER_DIR":      {here, env, "", here, false},
+		"NIXER_DIR when cwd is no config": {empty, env, "", env, false},
+		"cwd config, no env":              {here, "", "", here, false},
+		"nothing found":                   {empty, "", "", "", true},
+		"bad NIXER_DIR is an error":       {empty, empty, "", "", true},
+	} {
+		t.Run(name, func(t *testing.T) {
+			cd(tc.cwd)
+			t.Setenv("NIXER_DIR", tc.env)
+			got, err := Dir(tc.flag)
+			if tc.wantErr {
+				if err == nil {
+					t.Fatalf("want error, got %q", got)
+				}
+				return
+			}
+			if err != nil || got != tc.want {
+				t.Fatalf("got %q, %v; want %q", got, err, tc.want)
+			}
+		})
+	}
+}

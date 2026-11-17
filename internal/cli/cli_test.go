@@ -137,3 +137,36 @@ func TestAddWarnsAboutUntrackedFile(t *testing.T) {
 		t.Fatalf("tracked file still warns:\n%s", out)
 	}
 }
+
+func TestVersion(t *testing.T) {
+	for _, args := range [][]string{{"version"}, {"--version"}} {
+		code, out := run(args...)
+		if code != 0 || !strings.HasPrefix(out, "nixer ") {
+			t.Errorf("%v: exit %d %q", args, code, out)
+		}
+	}
+}
+
+// Layouts from the roadmap's section 2, read through the CLI.
+func TestListLayouts(t *testing.T) {
+	dir := fixture(t, map[string]string{
+		"flake.nix": "{}",
+		"home.nix":  "{ pkgs, ... }: {\n  home = {\n    packages = with pkgs; [\n      fish\n    ];\n  };\n}\n",
+		"configuration.nix": "{ pkgs, ... }: {\n  environment.systemPackages = [ pkgs.git pkgs.curl ];\n" +
+			"  homebrew = {\n    enable = true;\n    casks = [ \"ghostty\" \"firefox\" ];\n  };\n" +
+			"  fonts.packages = [ a ] ++ extra;\n}\n",
+	})
+	code, out := run("--dir", dir, "list")
+	if code != 1 {
+		t.Fatalf("exit %d (the ++ list should fail the run):\n%s", code, out)
+	}
+	for _, want := range []string{"  fish", "  pkgs.git", "  pkgs.curl", "  ghostty", "  firefox"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("missing %q in:\n%s", want, out)
+		}
+	}
+	code, out = run("--dir", dir, "list", "-F")
+	if code != 1 || !strings.Contains(out, "++") {
+		t.Errorf("unsupported list should be explained, got exit %d:\n%s", code, out)
+	}
+}

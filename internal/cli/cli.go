@@ -17,6 +17,7 @@ import (
 	"github.com/aksappy/nixer/internal/git"
 	"github.com/aksappy/nixer/internal/rebuild"
 	"github.com/aksappy/nixer/internal/ui"
+	"github.com/aksappy/nixer/internal/version"
 )
 
 const usageText = `nixer: add/remove packages in your nix-darwin config without opening the files.
@@ -34,13 +35,15 @@ Commands:
   clean              garbage-collect the Nix store (--old: also old generations, -n: dry run)
   ui                 manage everything in a local web page
   edit [file]        open a config file in $EDITOR
+  version            print the nixer version
   doctor             show what nixer detected (run this first, and in bug reports)
 
 Targets for add/rm/list (default: home-manager packages):
   -H home.packages   -s environment.systemPackages   -F fonts.packages
   -b homebrew brews  -c homebrew casks               -t homebrew taps
 
-The config directory is --dir, $NIXER_DIR, or the current directory.
+The config directory is --dir, else the nearest directory from here upwards that has a
+flake.nix, else $NIXER_DIR.
 `
 
 type exitError int
@@ -72,8 +75,12 @@ func (a *app) run(args []string) error {
 	global.SetOutput(a.err)
 	global.Usage = func() { fmt.Fprint(a.err, usageText) }
 	dir := global.String("dir", "", "config directory")
+	showVersion := global.Bool("version", false, "print the version")
 	if err := global.Parse(args); err != nil {
 		return err
+	}
+	if *showVersion {
+		return a.version("", nil)
 	}
 	rest := global.Args()
 	if len(rest) == 0 {
@@ -85,6 +92,7 @@ func (a *app) run(args []string) error {
 	commands := map[string]func(string, []string) error{
 		"add": a.add, "rm": a.rm, "remove": a.rm, "list": a.list, "ls": a.list,
 		"search": a.search, "apply": a.apply, "edit": a.edit, "ui": a.ui, "doctor": a.doctor, "undo": a.undo, "clean": a.clean,
+		"version": a.version,
 	}
 	if cmd == "help" {
 		global.Usage()
@@ -307,18 +315,28 @@ func (a *app) list(dirFlag string, args []string) error {
 	if err != nil {
 		return err
 	}
+	failed := false
 	for _, l := range lists {
 		if l.Absent && !explicit {
 			continue // this config has no such list; only say so when asked
 		}
-		if l.Error != "" {
+		if l.Absent {
 			fmt.Fprintf(a.out, "%s (%s): not found\n", l.Label, l.File)
+			continue
+		}
+		if l.Error != "" {
+			// Present but not editable (e.g. built with ++): say why.
+			fmt.Fprintf(a.out, "%s (%s): cannot read: %s\n", l.Label, l.File, l.Error)
+			failed = true
 			continue
 		}
 		fmt.Fprintf(a.out, "%s (%s):\n", l.Label, l.File)
 		for _, i := range l.Items {
 			fmt.Fprintln(a.out, "  "+i)
 		}
+	}
+	if failed {
+		return exitError(1)
 	}
 	return nil
 }
@@ -390,6 +408,11 @@ func (a *app) rebuild(p *config.Project, host string) error {
 		return err
 	}
 	return a.passthrough("sudo", "darwin-rebuild", "switch", "--flake", flake)
+}
+
+func (a *app) version(string, []string) error {
+	fmt.Fprintln(a.out, "nixer", version.String())
+	return nil
 }
 
 func (a *app) undo(dirFlag string, args []string) error {

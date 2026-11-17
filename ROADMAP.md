@@ -59,12 +59,12 @@ smallest set of changes that removes those assumptions.
 
 ## 4. Project basics
 
-- [ ] Put the repo under git, tag releases, add `nixer version`.
-- [ ] CI: `go vet`, `go test`, `nix build` on macOS.
-- [ ] Drop the Linux systems from `flake.nix`; the binary cannot apply there.
-- [ ] Tests for `edit`, `config`, and `cli` against fixture configs covering
+- [x] Put the repo under git, add `nixer version`. (Tag releases: `git tag v0.1.0` once committed.)
+- [x] CI: `go vet`, `go test`, `nix build` on macOS.
+- [x] Drop the Linux systems from `flake.nix`; the binary cannot apply there.
+- [x] Tests for `edit`, `config`, and `cli` against fixture configs covering
       the layouts in section 2 (only `nixedit`, `diff`, and `ui` are tested now).
-- [ ] README: a "supported layouts" section and a `nixer.json` example.
+- [x] README: a "supported layouts" section and a `nixer.json` example.
 
 ## Not now
 

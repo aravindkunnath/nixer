@@ -5,15 +5,18 @@
 
   outputs = { self, nixpkgs }:
     let
-      systems = [ "aarch64-darwin" "x86_64-darwin" "aarch64-linux" "x86_64-linux" ];
+      version = "0.1.0";
+      # macOS only: nixer drives darwin-rebuild, which does not exist elsewhere.
+      systems = [ "aarch64-darwin" "x86_64-darwin" ];
       forAll = f: nixpkgs.lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});
     in
     {
       packages = forAll (pkgs: rec {
         nixer = pkgs.buildGoModule {
           pname = "nixer";
-          version = "0.1.0";
+          inherit version;
           src = ./.;
+          ldflags = [ "-X github.com/aksappy/nixer/internal/version.Version=${version}" ];
           vendorHash = null; # standard library only
           subPackages = [ "cmd/nixer" ];
           meta.mainProgram = "nixer";
